@@ -242,9 +242,13 @@ numpy
 
 ---
 
-## 👤 Author
+## 👥 Authors
 
-Built as a thesis project.  
+Built as a thesis project by:
+
+- **Marouane Daouki** 
+- **Imane Alouani**
+
 Feel free to open issues or contribute via pull requests.
 
 ---
