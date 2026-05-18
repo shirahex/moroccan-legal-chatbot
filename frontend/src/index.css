@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+/* Font size scaling */
+.font-size-small * {
+  font-size: 14px !important;
+}
+.font-size-medium * {
+  font-size: 16px !important;
+}
+.font-size-large * {
+  font-size: 18px !important;
+}
+
+/* RTL global settings */
+.rtl {
+  direction: rtl;
+  text-align: right;
+}
+
+.rtl .flex {
+  flex-direction: row-reverse;
+}
+
+.rtl .justify-start {
+  justify-content: flex-end !important;
+}
+
+.rtl .justify-end {
+  justify-content: flex-start !important;
+}
+
+.rtl .text-left {
+  text-align: right !important;
+}
+
+.rtl .text-right {
+  text-align: left !important;
+}
