@@ -1,168 +1,254 @@
-# Carton Compliance Analyzer 📦
+# ⚖️ Moroccan Legal Chatbot — Assistant Juridique Marocain
 
-[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.25+-orange.svg)](https://streamlit.io)
-[![YOLOv8](https://img.shields.io/badge/YOLO-v8-blueviolet.svg)](https://ultralytics.com/)
-[![License: GNU GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+A RAG-based (Retrieval-Augmented Generation) legal assistant specialized in Moroccan criminal law — covering the **Penal Code (Code Pénal)** and the **Code of Criminal Procedure (Code de Procédure Pénale)**. Built as a thesis project, it combines semantic search, BM25 retrieval, and Google Gemini to answer legal questions in **French, Arabic, and Darija**.
 
-A Streamlit web application designed for analyzing carton compliance in images. It uses a YOLOv8 object detection model to identify cartons and then applies a series of configurable analysis modules to assess stacking quality, overhang issues, zone-based counts, and overall compliance.
+---
 
-This application is part of the `warehouse-management-app` repository.
+## 📸 Overview
 
-## ✨ Features
+This project consists of:
 
-* **Object Detection:** Utilizes the included YOLOv8 model (`weights/best.pt`) to detect cartons in uploaded images.
-* **Pairwise Overhang Analysis:** Identifies cartons improperly overhanging others based on configurable thresholds.
-* **Advanced Stack Analysis:**
-  * Identifies vertical stacks of cartons.
-  * Checks for maximum stack height compliance.
-  * Analyzes stack alignment and stability.
-* **Zone-Based Counting:** Allows users to define custom rectangular zones on the image and counts cartons within each.
-* **Compliance Scoring:** Generates an overall compliance score based on the various analysis checks.
-* **Interactive UI:**
-  * Image upload for analysis.
-  * Visualization of detected boxes, overhangs, stacks, and zones directly on the image.
-  * Detailed results presented in tabs (Detections, Overhang, Stacks, Zones, Summary).
-* **Dashboard:** Provides an overview of analysis history, compliance trends, detection counts, and processing times.
-* **Analysis History:** Stores and allows review of past analysis results.
-* **Configurable Settings:**
-  * Detection parameters (confidence, IoU).
-  * Expected carton count.
-  * Enable/disable and configure parameters for overhang, stack, and zone analyses.
-  * Zone definitions (name, coordinates, color).
-* **Settings Persistence:** User settings and analysis history are saved locally in JSON files within the `data/` directory.
-* **Custom Theming:** Includes custom CSS for a polished look and feel.
+- **Backend** — Flask API with a full NLP pipeline (RAG + hybrid search + LLM)
+- **Frontend** — React application with a chat interface, history view, and penal code browser
+- **Data** — Structured legal articles extracted from official Moroccan legal PDFs
 
-## 📸 Screenshots
+---
 
-![image](https://github.com/user-attachments/assets/90f9a80c-6987-4edf-881e-92d7a902b472)
+## 🗂️ Project Structure
 
+```
+MOROCCAN-LEGAL-CHATBOT/
+├── backend/
+│   ├── fullpipeline.py                         # Core RAG pipeline (embeddings, retrieval, LLM)
+│   ├── app.py                                  # Flask REST API
+│   ├── penal_code_chunks_themes_expanded.jsonl # Penal code data (JSONL)
+│   ├── legal_articles_dataset.json             # Procedure code data (JSON)
+│   ├── faiss_index_moroccan_legal_google/      # FAISS vector index (auto-generated)
+│   │   ├── index.faiss
+│   │   └── index.pkl
+│   ├── .env                                    # ⚠️ Your API key goes here (not committed)
+│   └── venv/                                   # Python virtual environment
+│
+└── frontend/
+    ├── public/
+    │   └── index.html
+    └── src/
+        ├── components/
+        │   ├── ChatInput.js
+        │   ├── ChatMessage.js
+        │   ├── Header.js
+        │   ├── HelpView.js
+        │   ├── HistoryView.js
+        │   ├── LandingPage.js
+        │   ├── MessageBubble.js
+        │   ├── PenalCodeView.js
+        │   ├── SettingsView.js
+        │   ├── Sidebar.js
+        │   └── TypingLoader.js
+        ├── contexts/
+        │   └── SettingsContext.js
+        ├── App.js
+        ├── App.css
+        ├── index.js
+        └── index.css
+```
+
+---
+
+## 🧠 How It Works
+
+The pipeline implements **hybrid retrieval** combining three strategies:
+
+1. **Semantic search** — Google `embedding-001` embeddings stored in a FAISS index
+2. **BM25 keyword search** — via `rank_bm25` for lexical matching
+3. **Levenshtein fuzzy matching** — for handling typos and spelling variants
+
+Results are merged and re-ranked before being fed to **Gemini 1.5 Flash** as grounded context. The system prompt constrains the model to answer only from retrieved articles, cite article numbers and sources, and refuse to hallucinate.
+
+**Language support:**
+- Questions in French are processed directly
+- Questions in Arabic (MSA) are translated to French for retrieval, and the response is translated back to Arabic with a disclaimer
+- Darija terms are handled via an extended synonym map
+
+---
+
+## 📦 Data Format
+
+### Penal Code (`penal_code_chunks_themes_expanded.jsonl`)
+One JSON object per line:
+```json
+{
+  "id": "article_123_chunk_1",
+  "metadata": {
+    "book": "LIVRE II",
+    "title": "...",
+    "chapter": "...",
+    "section": "...",
+    "article": "123",
+    "keywords": ["vol", "soustraction"],
+    "themes": ["vol et extorsion"]
+  },
+  "text": "Code Pénal Article 123: ..."
+}
+```
+
+### Procedure Code (`legal_articles_dataset.json`)
+JSON array of objects:
+```json
+[
+  {
+    "article_number": "PREMIER",
+    "book": null,
+    "title": null,
+    "chapter": null,
+    "section": null,
+    "text": "Toute infraction donne ouverture à une action publique..."
+  }
+]
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Python 3.10+
+- Node.js 18+
+- A **Google AI Studio API key** with Gemini API access
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/moroccan-legal-chatbot.git
+cd moroccan-legal-chatbot
+```
+
+### 2. Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate        # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+#### ⚠️ Download the language detection model
+
+The file `lid.176.bin` (used to detect Arabic/French input) is too large for GitHub (125MB) and is not included in this repository. Download it manually:
+
+1. Go to: [https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin](https://dl.fbaipublicfiles.com/fasttext/supervised-models/lid.176.bin)
+2. Download the file
+3. Place it inside the `backend/` folder
+
+Without this file, language detection will fail and Arabic queries will not be handled correctly.
+
+#### ⚠️ Configure your API key
+
+Create a `.env` file inside the `backend/` directory:
+
+```
+GOOGLE_API_KEY=your_google_ai_studio_api_key_here
+```
+
+> You can get a free API key at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey).  
+> The `.env` file is excluded from version control — **never commit your API key**.
+
+#### Run the backend
+
+```bash
+python app.py
+```
+
+> **Note for first-time setup:** The FAISS vector index (`faiss_index_moroccan_legal_google/`) is not included in the repository to keep the repo lightweight. On the **first run**, `app.py` will automatically build it from the data files and save it to disk — this takes a few minutes. Every run after that will load the index from disk instantly. Make sure both `penal_code_chunks_themes_expanded.jsonl` and `legal_articles_dataset.json` are present in the `backend/` directory before running.
+
+The API will be available at `http://localhost:5000`.
+
+### 3. Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The app will open at `http://localhost:3000`.
+
+---
+
+## 🔌 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/new-session` | Create a new chat session |
+| `POST` | `/api/chat` | Send a message, receive a legal answer |
+| `GET` | `/api/history/<session_id>` | Retrieve full chat history for a session |
+| `GET` | `/api/sessions` | List all active sessions with titles |
+
+### Example request
+
+```bash
+curl -X POST http://localhost:5000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "session_id": "session_abc123",
+    "message": "Quelles sont les peines prévues pour le vol simple au Maroc?"
+  }'
+```
+
+---
 
 ## 🛠️ Tech Stack
 
-* **Backend/ML:**
-  * Python 3.8+
-  * Ultralytics YOLOv8 (for object detection)
-  * OpenCV (for image processing)
-  * NumPy (for numerical operations)
-  * Pillow (PIL) (for image manipulation)
-* **Frontend/Web Framework:**
-  * Streamlit
-* **Data & Visualization:**
-  * Pandas (for data manipulation)
-  * Plotly (for interactive charts)
-* **Streamlit Extras:**
-  * `streamlit-option-menu` (for sidebar navigation)
-  * `streamlit-extras` (for UI enhancements like colored headers, metric cards)
+| Layer | Technology |
+|-------|-----------|
+| LLM | Google Gemini 1.5 Flash (`gemini-1.5-flash-latest`) |
+| Embeddings | Google `embedding-001` via LangChain |
+| Vector store | FAISS (via `langchain-community`) |
+| Keyword search | BM25 (`rank_bm25`) |
+| Fuzzy matching | `python-Levenshtein` |
+| Language detection | `langdetect` |
+| Backend | Flask + Flask-CORS |
+| Frontend | React + Tailwind CSS |
 
-## Prerequisites
+---
 
-* Python 3.8 or higher
-* Git
+## 📋 Python Dependencies
 
-## ⚙️ Setup & Installation
-
-1. **Clone the repository:**
-```bash
-git clone https://github.com/shirahex/warehouse-management-app.git
-cd warehouse-management-app
-```
-
-2. **Create and activate a virtual environment (recommended):**
-```bash
-python -m venv venv
-# On Windows
-venv\Scripts\activate
-# On macOS/Linux
-source venv/bin/activate
-```
-
-3. **Install dependencies:**
-The required Python packages are listed in `requirements.txt`. The YOLO model (`weights/best.pt`) is included in this repository.
-```bash
-pip install -r requirements.txt
-```
-*(Note: The `packages.txt` file is typically used for system-level dependencies when deploying to platforms like Streamlit Cloud. For local setup, `requirements.txt` is usually sufficient.)*
-
-## 🚀 Running the Application
-
-Once the setup is complete, run the Streamlit application:
-
-```bash
-streamlit run app.py
-```
-
-## 📁 Project Structure
+Key packages (`requirements.txt` should include):
 
 ```
-warehouse-management-app/
-├── data/                # Stores user data
-│   ├── analysis_history.json  # History of analyses
-│   └── user_settings.json     # User-defined settings
-├── weights/
-│   └── best.pt          # Pre-trained YOLO model file
-├── .gitignore           # Specifies intentionally untracked files
-├── app.py               # Main Streamlit application script
-├── packages.txt         # System-level dependencies for deployment
-├── requirements.txt     # Python package dependencies
-└── README.md            # This file
+flask
+flask-cors
+langchain
+langchain-community
+langchain-google-genai
+google-generativeai
+faiss-cpu
+rank-bm25
+python-Levenshtein
+langdetect
+python-dotenv
+numpy
 ```
 
-## 🔧 Configuration
+---
 
-Most configurations can be done directly through the "Settings" page in the application UI. These settings are saved to `data/user_settings.json`.
+## ⚠️ Limitations & Disclaimer
 
-* **Detection Parameters:** Confidence threshold, IoU threshold for Non-Maximum Suppression (NMS).
+- This chatbot covers **only** the Moroccan Penal Code and Code of Criminal Procedure. Questions about other laws (family law, commercial law, the Constitution, etc.) will be declined.
+- Arabic responses go through automatic translation and **may contain inaccuracies**. A disclaimer is always prepended to Arabic answers.
+- This tool is for **informational purposes only** and does not constitute legal advice. For any real legal situation, consult a licensed Moroccan attorney.
 
-* **Analysis Modules:** Enable/disable and set parameters for:
-  * Pairwise Overhang Analysis
-  * Advanced Stack Analysis
-  * Zone Counting
+---
 
-* **Zone Management:** Define up to MAX_ZONES (currently 5) with names, pixel coordinates (Xmin, Ymin, Xmax, Ymax), and display colors.
+## 👤 Author
 
-* **Appearance:** A conceptual dark mode toggle is present.
+Built as a thesis project.  
+Feel free to open issues or contribute via pull requests.
 
-* **Data Management:** Save, load, or reset settings to default.
-
-## 🎨 Customization
-
-* **Theme Colors:** The THEME dictionary in app.py defines the color palette used throughout the app and in the custom CSS.
-
-* **CSS:** Custom CSS is loaded via the `load_custom_css()` function. You can modify the CSS rules within this function to further tailor the appearance.
-
-* **YOLO Model:** To use a different model, replace `weights/best.pt` or update the MODEL_PATH variable in app.py. If you replace the model, ensure it's compatible with the Ultralytics YOLO library version specified in requirements.txt.
-
-## 📈 Future Enhancements
-
-* **Live Camera Feed Analysis:** Integrate real-time analysis from a camera stream.
-* **Batch Image Processing:** Allow users to upload and analyze multiple images at once.
-* **Advanced Reporting:** Generate PDF or CSV reports of the analysis.
-* **User Authentication:** For multi-user environments or to protect sensitive data.
-* **Database Integration:** Use a proper database (e.g., SQLite, PostgreSQL) instead of JSON files for more robust data storage, especially for analysis_history.
-* **More Sophisticated Error Handling & Logging.**
-* **Unit and Integration Tests.**
-
-## 🤝 Contributing
-
-Contributions are welcome! If you have suggestions for improvements or bug fixes, please:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature/AmazingFeature`).
-3. Make your changes.
-4. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-5. Push to the branch (`git push origin feature/AmazingFeature`).
-6. Open a Pull Request.
+---
 
 ## 📄 License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details or visit [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html).
-
-## 🙏 Acknowledgements
-
-* Streamlit for the awesome web app framework.
-* Ultralytics for the YOLO object detection models and library.
-* Plotly for interactive charting.
-* The creators of streamlit-option-menu and streamlit-extras.
-
-Happy Analyzing! 📦🚀
+This project is for academic and educational purposes.
