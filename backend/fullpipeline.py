@@ -10,7 +10,7 @@ import requests # Kept for potential future use, not actively used by Gemini pip
 import numpy as np # FAISS might use it, good to have
 from typing import List, Dict, Any, Tuple, Optional
 
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from langchain_community.vectorstores import FAISS as LangchainFAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -41,14 +41,14 @@ if GOOGLE_API_KEY is None:
     exit()
 
 # Model Names
-GOOGLE_EMBEDDING_MODEL = "models/embedding-001"
-GOOGLE_CHAT_MODEL = "models/gemini-1.5-flash-latest" 
-GOOGLE_TRANSLATE_MODEL = "models/gemini-1.5-flash-latest" # Using Flash for speed in translation
+GOOGLE_EMBEDDING_MODEL = os.getenv("GOOGLE_EMBEDDING_MODEL", "models/embedding-001")
+GOOGLE_CHAT_MODEL = os.getenv("GOOGLE_CHAT_MODEL", "models/gemini-1.5-flash-latest") 
+GOOGLE_TRANSLATE_MODEL = os.getenv("GOOGLE_TRANSLATE_MODEL", GOOGLE_CHAT_MODEL) # Using Flash for speed in translation
 
 # Data file paths
 PENAL_CODE_PATH = "penal_code_chunks_themes_expanded.jsonl"
 PROCEDURE_CODE_PATH = "legal_articles_dataset.json"
-FAISS_INDEX_PATH_GOOGLE = "faiss_index_moroccan_legal_google" # For Google embeddings
+FAISS_INDEX_PATH_GOOGLE = os.getenv("FAISS_INDEX_PATH_GOOGLE", "faiss_index_moroccan_legal_google") # For Google embeddings
 CONVERSATION_MEMORY_FILE = "conversation_memory_google.json" # For standalone interactive mode
 
 # --- CONVERSATION MEMORY CLASS ---

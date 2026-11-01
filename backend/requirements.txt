@@ -1,0 +1,13 @@
+flask
+flask-cors
+faiss-cpu
+numpy
+requests
+langchain-core
+langchain-community
+langchain-google-genai
+google-generativeai
+rank-bm25
+python-Levenshtein
+python-dotenv
+langdetect
